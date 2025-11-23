@@ -1,0 +1,134 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <title>Admin Dashboard</title>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600&display=swap" rel="stylesheet">
+    <style>
+        body { font-family: 'Poppins', sans-serif; background: #f4f6f8; color: #333; margin: 0; padding: 0; }
+        .navbar { background: white; padding: 15px 30px; display: flex; justify-content: space-between; align-items: center; box-shadow: 0 2px 10px rgba(0,0,0,0.05); position: sticky; top: 0; }
+        .brand { font-weight: 600; font-size: 1.2rem; color: #6c63ff; display: flex; align-items: center; gap: 10px; }
+        .nav-links button { background: transparent; border: none; color: #666; font-weight: 500; font-size: 15px; margin-right: 20px; cursor: pointer; padding: 8px 12px; border-radius: 6px; transition: 0.3s; }
+        .nav-links button:hover, .nav-links button.active { background: #f0ebff; color: #6c63ff; }
+        .logout-btn { background: #ff5f5f; padding: 8px 16px; border: none; color: white; border-radius: 6px; cursor: pointer; font-size: 0.9rem; }
+        .container { padding: 40px; max-width: 1000px; margin: 0 auto; }
+        .card { background: white; border-radius: 12px; padding: 25px; box-shadow: 0 5px 15px rgba(0,0,0,0.03); margin-bottom: 30px; }
+        .title { font-size: 20px; font-weight: 600; margin-bottom: 20px; color: #2d3436; border-left: 4px solid #6c63ff; padding-left: 15px; }
+        table { width: 100%; border-collapse: collapse; margin-top: 10px; }
+        th { text-align: left; padding: 15px; background: #f8f9fa; color: #636e72; font-size: 0.85rem; text-transform: uppercase; letter-spacing: 1px; border-bottom: 2px solid #eee; }
+        td { padding: 15px; border-bottom: 1px solid #eee; font-size: 0.95rem; color: #2d3436; }
+        tr:hover td { background: #fafafa; }
+        .status-active { background: #e3fcef; color: #00b894; padding: 4px 8px; border-radius: 4px; font-size: 0.8rem; font-weight: 600; }
+        .delete-btn { background: #fff0f0; color: #d63031; border: 1px solid #ffdede; padding: 6px 12px; border-radius: 6px; cursor: pointer; transition: 0.2s; }
+        .delete-btn:hover { background: #d63031; color: white; }
+        .hidden { display: none; }
+    </style>
+</head>
+<body>
+
+    <div class="navbar">
+        <div class="brand"><span>🚀</span> Admin Dashboard</div>
+        <div class="nav-links">
+            <button onclick="showUsers()" id="btn-users" class="active">Users List</button>
+            <button onclick="showApiKeys()" id="btn-keys">API Keys List</button>
+        </div>
+        <button class="logout-btn" onclick="logout()">Logout</button>
+    </div>
+
+    <div class="container">
+        <div id="usersPage" class="card">
+            <div class="title">Daftar Pengguna</div>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Nama Lengkap</th>
+                        <th>Email</th>
+                        <th>ID API Key</th> 
+                    </tr>
+                </thead>
+                <tbody id="usersTable"></tbody>
+            </table>
+        </div>
+
+        <div id="keysPage" class="card hidden">
+            <div class="title">Daftar API Key Aktif</div>
+            <table>
+                <thead>
+                    <tr>
+                        <th>API Key</th>
+                        <th>Email Pemilik</th>
+                        <th>Status</th>
+                        <th>Aksi</th>
+                    </tr>
+                </thead>
+                <tbody id="keysTable"></tbody>
+            </table>
+        </div>
+    </div>
+
+<script>
+    function showUsers() {
+        document.getElementById("usersPage").classList.remove("hidden");
+        document.getElementById("keysPage").classList.add("hidden");
+        document.getElementById("btn-users").classList.add("active");
+        document.getElementById("btn-keys").classList.remove("active");
+        loadUsers();
+    }
+
+    function showApiKeys() {
+        document.getElementById("keysPage").classList.remove("hidden");
+        document.getElementById("usersPage").classList.add("hidden");
+        document.getElementById("btn-keys").classList.add("active");
+        document.getElementById("btn-users").classList.remove("active");
+        loadApiKeys();
+    }
+
+    function logout() {
+        if(confirm("Keluar dari admin?")) window.location.href = "/";
+    }
+
+
+    async function loadUsers() {
+        const res = await fetch("/admin/list-users");
+        const users = await res.json();
+        const table = document.getElementById("usersTable");
+        table.innerHTML = "";
+        users.forEach(u => {
+            table.innerHTML += `
+                <tr>
+                    <td style="font-weight:600">${u.first_name} ${u.last_name || ""}</td>
+                    <td>${u.email}</td>
+                    <td>${u.id_apikey}</td>
+                </tr>`;
+        });
+    }
+
+    async function loadApiKeys() {
+        const res = await fetch("/admin/list-apikeys");
+        const keys = await res.json();
+        const table = document.getElementById("keysTable");
+        table.innerHTML = "";
+        keys.forEach(k => {
+            table.innerHTML += `
+                <tr>
+                    <td style="font-family:monospace; color:#6c63ff">${k.api_key.substring(0, 20)}...</td>
+                    <td>${k.owner_email || "No Email"}</td> 
+                    <td><span class="status-active">${k.status}</span></td>
+                    <td>
+                        <button class="delete-btn" onclick="deleteKey(${k.id})">Revoke</button>
+                    </td>
+                </tr>`;
+        });
+    }
+
+    async function deleteKey(id) {
+        if (!confirm("Hapus API key ini?")) return;
+        await fetch(`/admin/delete-key/${id}`, { method: "DELETE" });
+        loadApiKeys();
+    }
+
+    loadUsers();
+</script>
+
+</body>
+</html>
