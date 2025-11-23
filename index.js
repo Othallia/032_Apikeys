@@ -134,14 +134,23 @@ app.post("/admin/login", async (req, res) => {
       [email, password]
     );
 
-    if (rows.length > 0) {
-      res.json({ status: "success", message: "Login berhasil!" });
-    } else {
-      res.status(401).json({ status: "error", message: "Email/Password salah" });
+    if (rows.length === 0) {
+      return res.status(401).json({
+        status: "error",
+        message: "Email/Password salah"
+      });
     }
 
+    // JIKA LOGIN BERHASIL
+    return res.json({
+      status: "success",
+      message: "Login berhasil!",
+      redirect: "/admin-dashboard.html"   // <── INI YANG KAMU MAU
+    });
+
   } catch (error) {
-    res.status(500).json({ error: "Error server" });
+    console.error(error);
+    res.status(500).json({ status: "error", message: "Error server" });
   }
 });
 
